@@ -9,6 +9,8 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-mods-orange)](#claude-code-mod-实战)
 [![YouTube](https://img.shields.io/badge/YouTube-@cyxj__ai-red)](https://www.youtube.com/@cyxj_ai)
 
+**v0.1.0 · 2026-10-09 更新 · 在 Claude Code 2.1.295、macOS 26.7.1 上测试** · [更新记录](CHANGELOG.md)
+
 <p align="center"><img src="docs/demo.gif" width="560" alt="cyxj-notch：鼠标移到刘海上，展开毛玻璃的 Claude Code 面板"></p>
 
 ---
@@ -33,11 +35,24 @@
 - 贴着刘海那一截是纯黑，往下渐变成系统毛玻璃，和硬件刘海看不出接缝。
 - 展开用带一点回弹的弹簧，内容按区块依次浮现（淡入 + 下落 8 点 + 去模糊）；收起更快、不回弹。出场比进场短。
 
+## 和自带状态栏比
+
+| | Claude Code [状态栏](https://code.claude.com/docs/en/statusline) | cyxj-notch |
+|---|---|---|
+| 在哪看 | 只在一个终端里 | 屏幕顶部，在任何 App 里都能看 |
+| 显示几个对话 | 只有它所在的那个 | 所有开着的对话，跨终端、跨项目 |
+| 5 小时 / 本周额度 | 有，读 `rate_limits` | 有，同一份数据，由 `quota-status` 写出 |
+| 任务进度、缓存倒计时、待办 | 要自己写脚本 | 现成的，来自 5 个 mod |
+| 怎么装 | `settings.json` 里配一个脚本 | 编译 App + 加载 5 个 mod |
+
+两者可以一起用：`quota-status` 自己有状态栏，同时给刘海台喂数据。
+
 ## 环境要求
 
 - macOS 14 及以上（有刘海的 MacBook 最好；没有刘海的屏幕按主屏顶部正中 200 宽的"假刘海"算）
 - Swift 5.9+（装 Xcode 或命令行工具即可）
-- 支持 mod 的 Claude Code（在 2.1.295 上开发和测试）
+- Claude Code v2.1.287 及以上，[mod](https://code.claude.com/docs/en/plugins/mods/overview) 默认开启（在 2.1.295 上测试）
+- 额度区块需要 Pro 或 Max 订阅：Claude Code 只给订阅用户报 5 小时和本周额度，而且要等对话收到第一次回复之后才有（[官方说明](https://code.claude.com/docs/en/statusline#rate-limit-usage)）
 
 ## 快速开始
 
@@ -62,6 +77,8 @@ pkill -x NotchDesk              # 退出
 }
 ```
 
+`CLAUDE_CODE_PLUGIN_DIRS` 和 `--plugin-dir` 的加载方式一样（[官方说明](https://code.claude.com/docs/en/plugins/mods/reference#settings-and-environment-variables)）；只想在这一次对话里试某个 mod，可以用 `claude --plugin-dir mods/quota-status`。
+
 `quota-status` 和 `task-progress` 不用配置。后面三个变量都是可选的，不设的话「正在推进的内容」和「发片节奏」就不显示。
 
 「等你」默认认的是 `我:`，想换成自己的名字：
@@ -72,7 +89,7 @@ defaults write com.xiaochen.notchdesk ownerName 你的名字
 
 ## Claude Code mod 实战
 
-**Claude Code mod** 是本地插件，由一组"函数钩子"组成：一个 TypeScript 模块，给 Claude Code 的事件（`session.start`、`turn.complete`、`tool.call`、`ui.render` 等）注册处理函数，再调用引擎接口（`$.ui.status`、`$.ui.toast`、`$.fs.write`、`$.session.usage()`、`$.clock.every`、`$.tool.register` 等）。改了文件会自动重新加载，从 `CLAUDE_CODE_PLUGIN_DIRS` 列出的文件夹加载。
+**Claude Code mod** 是带"钩子模块"（hooks module）的插件：一个 JavaScript 或 TypeScript 文件，里面的函数（钩子）在 `session.start`、`turn.complete`、`tool.call`、`ui.render` 等事件发生时被 Claude Code 调用，函数里可以调 mod 接口（`$.ui.status`、`$.ui.toast`、`$.fs.write`、`$.session.usage()`、`$.clock.every`、`$.tool.register`、`$.env.get` 等）。在交互对话里，用 `--plugin-dir` 或 `CLAUDE_CODE_PLUGIN_DIRS` 加载的 mod 保存就会重新加载。官方文档：[总览](https://code.claude.com/docs/en/plugins/mods/overview) · [写一个 mod](https://code.claude.com/docs/en/plugins/mods/create) · [参考](https://code.claude.com/docs/en/plugins/mods/reference) · [测试](https://code.claude.com/docs/en/plugins/mods/test) · [加载插件](https://code.claude.com/docs/en/plugins/loading) · [官方示例](https://github.com/anthropics/claude-code/tree/main/mods)。
 
 这个仓库演示的是一种做法：**mod 往本地写小 JSON，原生 App 去读。** Claude Code 始终是数据源头，刘海台只读不写，也不直接跟 Claude Code 通信。
 
@@ -92,15 +109,17 @@ Claude Code 对话 ──(mod 钩子)──► ~/.claude/notch/*.json ──(每
 
 ```sh
 cd mods/quota-status
-claude plugin validate .   # 结构检查
-claude plugin test .       # 跑测试
+claude plugin validate .   # 检查插件清单，列出 mod 用了哪些事件和接口
+claude plugin test .       # 跑所有 *.test.ts / *.test.tsx；quota-status：9 过 0 挂
 ```
+
+5 个 mod 在 Claude Code 2.1.295 上两条命令全部通过，共 44 个测试（quota-status 9、task-progress 11、version-board 13、todo-pane 2、publish-pulse 9）。
 
 做这几个 mod 的经验：
 - **mod 越小越好，文件格式越无聊越好。** 一个文件一个 JSON，带 `at` 时间戳；刘海台 150 秒没收到更新就当对话关了，崩溃了也能自己清掉。
 - **写文件，别开服务。** 比起开一个本地服务，写文件不用保活、不用管安全，SwiftUI、菜单栏脚本、网页谁都能读。
 - **纯逻辑单独放。** `quota.ts`、`bar.ts`、`scan.ts`、`parse.ts`、`pulse.ts` 里不调引擎，不开 Claude Code 也能单测。
-- **命令名只能用英文字母、数字、`_`、`-`**（`/daiban` 可以，中文名会注册失败）。
+- **命令名只能用英文字母、数字、`_`、`-`，最长 64 个字符**（[官方限制](https://code.claude.com/docs/en/plugins/mods/reference#limits)）。在 2.1.295 上实测：`/daiban` 能注册，`/待办` 和 `/café` 运行时被拒，而且 `claude plugin validate` 查不出来。
 
 ## 数据格式
 
@@ -144,7 +163,7 @@ NOTCH_FEED=<放样例 JSON 的文件夹> NOTCH_OPEN=1 ./build/刘海台.app/Cont
 装上 cyxj-notch 和 `quota-status` mod，鼠标移到刘海上就能看到 5 小时和本周的百分比和重置时间，60 秒刷新一次。
 
 **「缓存还热 12 分钟」是什么意思？**
-你一直接着聊，Claude Code 会复用提示缓存。对话停下来以后缓存会过期（mod 的算法：有额度窗口的订阅账号按 1 小时，其余按 5 分钟），过期后下一条消息要把整段上下文重发一遍，更慢也更贵。面板显示最快凉的那个，提醒你先回哪个。
+你一直接着聊，Claude Code 会复用[提示缓存](https://code.claude.com/docs/en/prompt-caching#cache-lifetime)，每用一次就重新计时；停着超过有效期，下一条消息要把整段上下文重发一遍，更慢也更贵。默认情况下，Pro/Max 订阅在套餐额度内主对话是 1 小时，用 API key、云厂商，或超出套餐开始扣额外用量时是 5 分钟。mod 的算法是：Claude Code 报了额度窗口就按 1 小时，否则按 5 分钟；它认不出你自己改过的 `promptCacheTtl`，也认不出超出套餐后变成 5 分钟的情况。面板显示最快凉的那个，提醒你先回哪个。
 
 **没有刘海的 Mac 能用吗？**
 能。没有刘海的屏幕按主屏顶部正中 200 宽的区域算。
@@ -155,8 +174,9 @@ NOTCH_FEED=<放样例 JSON 的文件夹> NOTCH_OPEN=1 ./build/刘海台.app/Cont
 **可以只装其中几个 mod 吗？**
 可以。哪个数据文件不存在或过期了，对应区块就自动不显示。
 
-**跟状态栏脚本有什么不一样？**
-状态栏只在一个终端里。刘海台同时显示所有开着的对话，跨终端、跨项目，在任何 App 里都能看。
+## 给 AI 编程助手
+
+[`llms.txt`](llms.txt) 列出了这个仓库里值得读的每个文件，每个一句话说明。
 
 ## 关于
 

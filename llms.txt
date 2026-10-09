@@ -1,8 +1,9 @@
 # cyxj-notch
 
-> macOS notch dashboard for Claude Code. Hover the MacBook notch to see 5-hour and weekly usage limits, every open Claude Code session (running / idle / just finished), multi-step task progress, prompt-cache countdown, preview servers from headless `claude -p` runs, and Markdown to-dos. Data comes from five Claude Code mods (function-hook plugins) included in the repo, which write JSON to ~/.claude/notch/; the SwiftUI app only reads it. MIT licensed, local-only, no network calls.
+> macOS notch dashboard for Claude Code. Hover the MacBook notch to see 5-hour and weekly usage limits, every open Claude Code session (running / idle / just finished), multi-step task progress, prompt-cache countdown, preview servers from headless `claude -p` runs, and Markdown to-dos. Data comes from five Claude Code mods (plugins with a hooks module, Claude Code v2.1.287+) included in the repo, which write JSON to ~/.claude/notch/; the SwiftUI app only reads it. MIT licensed, local-only, no network calls.
 
 ## Docs
+- [CHANGELOG](CHANGELOG.md): versions and test environment
 - [README (English)](README.md): features, install, mod setup, data format, FAQ
 - [README (中文)](README.zh-CN.md): 刘海台中文说明
 

@@ -9,6 +9,8 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-mods-orange)](#claude-code-mods-in-practice)
 [![YouTube](https://img.shields.io/badge/YouTube-@cyxj__ai-red)](https://www.youtube.com/@cyxj_ai)
 
+**v0.1.0 · updated 2026-10-09 · tested on Claude Code 2.1.295 and macOS 26.7.1** · [Changelog](CHANGELOG.md)
+
 <p align="center"><img src="docs/demo.gif" width="560" alt="cyxj-notch: hovering the MacBook notch expands a frosted-glass Claude Code dashboard"></p>
 
 ---
@@ -33,11 +35,24 @@ Design notes:
 - The strip touching the notch is pure black and fades into `NSVisualEffectView` glass, so there's no visible seam with the hardware.
 - Opening uses a slightly bouncy spring and staggers the sections in (fade + 8 pt drop + blur); closing is faster, with no bounce. Exits are shorter than entrances.
 
+## How it compares
+
+| | Claude Code [status line](https://code.claude.com/docs/en/statusline) | cyxj-notch |
+|---|---|---|
+| Where | Inside one terminal | Top of the screen, reachable from any app |
+| Sessions shown | The one it's running in | Every open session, across terminals and projects |
+| Usage limits (5 h / weekly) | Yes, via `rate_limits` | Yes, same data, written by the `quota-status` mod |
+| Task progress, cache countdown, to-dos | Only what you script | Built in, from the five mods |
+| Setup | One script in `settings.json` | Build the app + load five mods |
+
+The two work together: `quota-status` keeps its own status line and also feeds the notch.
+
 ## Requirements
 
 - macOS 14 or later (a notched MacBook is best; on other screens it uses a 200 pt "virtual notch" at the top center)
 - Swift 5.9+ (Xcode or Command Line Tools)
-- Claude Code with mod support (built and tested on Claude Code 2.1.295)
+- Claude Code v2.1.287 or later, where [mods](https://code.claude.com/docs/en/plugins/mods/overview) are on by default (tested on 2.1.295)
+- A Pro or Max subscription for the usage section: Claude Code only reports the 5-hour and weekly windows to subscribers, and only after the session's first response ([docs](https://code.claude.com/docs/en/statusline#rate-limit-usage))
 
 ## Quick start
 
@@ -62,6 +77,8 @@ Then load the mods so the panel has something to show — add their folders to `
 }
 ```
 
+`CLAUDE_CODE_PLUGIN_DIRS` loads plugin folders the same way as `--plugin-dir` ([docs](https://code.claude.com/docs/en/plugins/mods/reference#settings-and-environment-variables)); to try a mod for one session instead, run `claude --plugin-dir mods/quota-status`.
+
 `quota-status` and `task-progress` need no configuration. The last three variables are optional; without them the to-do and publish sections simply stay hidden.
 
 To tag "waiting on you" with your own name instead of `我`:
@@ -72,7 +89,7 @@ defaults write com.xiaochen.notchdesk ownerName YourName
 
 ## Claude Code mods in practice
 
-A **Claude Code mod** is a local plugin made of *function hooks*: a TypeScript module that registers handlers for Claude Code events (`session.start`, `turn.complete`, `tool.call`, `ui.render`, …) and calls an engine API (`$.ui.status`, `$.ui.toast`, `$.fs.write`, `$.session.usage()`, `$.clock.every`, `$.tool.register`, …). Mods hot-reload when you edit them and are loaded from the folders listed in `CLAUDE_CODE_PLUGIN_DIRS`.
+A **Claude Code mod** is a plugin with a *hooks module*: a JavaScript or TypeScript file whose functions (hooks) Claude Code calls on events such as `session.start`, `turn.complete`, `tool.call` and `ui.render`, and which can call the mod API (`$.ui.status`, `$.ui.toast`, `$.fs.write`, `$.session.usage()`, `$.clock.every`, `$.tool.register`, `$.env.get`, …). In an interactive session, mods loaded with `--plugin-dir` or `CLAUDE_CODE_PLUGIN_DIRS` reload when you save them. Official docs: [overview](https://code.claude.com/docs/en/plugins/mods/overview) · [create a mod](https://code.claude.com/docs/en/plugins/mods/create) · [reference](https://code.claude.com/docs/en/plugins/mods/reference) · [testing](https://code.claude.com/docs/en/plugins/mods/test) · [loading plugins](https://code.claude.com/docs/en/plugins/loading) · [example mods](https://github.com/anthropics/claude-code/tree/main/mods).
 
 This repo is a working example of one pattern: **mods write small JSON files, a native app reads them.** Claude Code stays the source of truth; the notch app is read-only and never talks to Claude Code directly.
 
@@ -92,15 +109,17 @@ Each mod has its configuration at the top of `hooks/register.ts(x)` and its own 
 
 ```sh
 cd mods/quota-status
-claude plugin validate .
-claude plugin test .
+claude plugin validate .   # checks the manifest and lists the events and API calls the mod uses
+claude plugin test .       # runs every *.test.ts / *.test.tsx; quota-status: 9 passed, 0 failed
 ```
+
+All five mods pass both commands on Claude Code 2.1.295 (44 tests in total: quota-status 9, task-progress 11, version-board 13, todo-pane 2, publish-pulse 9).
 
 Lessons from building these:
 - **Keep the mod tiny and the file format boring.** One JSON object per file, with an `at` timestamp; the app treats a session as closed after 150 s without an update, so crashes clean themselves up.
 - **Write, don't serve.** Writing files beats running a local server: nothing to keep alive, nothing to secure, and any app (SwiftUI, a menu-bar script, a web page) can read it.
 - **Pure logic in its own file.** `quota.ts`, `bar.ts`, `scan.ts`, `parse.ts`, `pulse.ts` have no engine calls, so they're unit-tested without Claude Code running.
-- **Command names must be ASCII** (`/daiban`, not a Chinese name) or registration fails.
+- **Command names must be ASCII letters, digits, `_` or `-`, up to 64 characters** ([limits](https://code.claude.com/docs/en/plugins/mods/reference#limits)). On 2.1.295 `/daiban` registers but `/待办` and `/café` are rejected at runtime, and `claude plugin validate` doesn't catch it.
 
 ## Data format
 
@@ -152,7 +171,7 @@ docs/                              screenshots and demo GIF
 Run cyxj-notch with the `quota-status` mod. Hovering the notch shows your 5-hour and weekly percentages and their reset times, refreshed every 60 seconds.
 
 **What does "cache 12 min left" mean?**
-Claude Code reuses a prompt cache while you keep talking. After a session goes idle the cache expires (the mod counts 1 hour when your account has usage-limit windows, i.e. a subscription, and 5 minutes otherwise), and the next message re-sends the whole context — slower and more expensive. The panel shows the idle session closest to expiring, so you know which one to continue first.
+Claude Code reuses a [prompt cache](https://code.claude.com/docs/en/prompt-caching#cache-lifetime) while you keep talking. Each cache hit resets the timer; once a session sits idle past the lifetime, the next message re-sends the whole context — slower and more expensive. By default the main conversation gets 1 hour on a Pro/Max subscription within plan usage, and 5 minutes with an API key, a cloud provider, or usage credits beyond the plan. The mod assumes 1 hour when Claude Code reports usage windows and 5 minutes otherwise; it doesn't detect a custom `promptCacheTtl`, or the switch to 5 minutes once you go past plan usage. The panel shows the idle session closest to expiring, so you know which one to continue first.
 
 **Does it work without a notch?**
 Yes. On a screen without a notch it uses a 200 pt-wide area at the top center of the main screen.
@@ -163,8 +182,9 @@ No. The app only reads local files in `~/.claude/notch/`; the mods only write th
 **Can I use only some of the mods?**
 Yes. Each section hides itself when its file is missing or stale.
 
-**How is this different from a status-line script?**
-A status line lives inside one terminal. The notch shows every open session at once, across terminals and projects, and is reachable from any app.
+## For AI coding assistants
+
+[`llms.txt`](llms.txt) lists every file worth reading in this repo, with one line each.
 
 ## About
 
