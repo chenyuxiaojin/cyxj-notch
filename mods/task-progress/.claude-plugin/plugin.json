@@ -1,0 +1,1 @@
+{"name": "task-progress", "version": "0.1.0", "description": "输入框上方的任务进度条：Claude 每做完一步，进度条往前走一格", "author": {"name": "chenyuxiaojin"}, "types": "./types/index.d.ts"}

@@ -1,0 +1,19 @@
+# cyxj-notch
+
+> macOS notch dashboard for Claude Code. Hover the MacBook notch to see 5-hour and weekly usage limits, every open Claude Code session (running / idle / just finished), multi-step task progress, prompt-cache countdown, preview servers from headless `claude -p` runs, and Markdown to-dos. Data comes from five Claude Code mods (function-hook plugins) included in the repo, which write JSON to ~/.claude/notch/; the SwiftUI app only reads it. MIT licensed, local-only, no network calls.
+
+## Docs
+- [README (English)](README.md): features, install, mod setup, data format, FAQ
+- [README (中文)](README.zh-CN.md): 刘海台中文说明
+
+## Claude Code mods
+- [quota-status](mods/quota-status): status line with usage limits, reset day, session cost, cache countdown; writes sessions/<id>.quota.json
+- [task-progress](mods/task-progress): registers a `progress` tool and draws a progress bar; writes sessions/<id>.progress.json
+- [version-board](mods/version-board): side pane of `claude -p` preview servers, caps at 3; writes versions.json
+- [todo-pane](mods/todo-pane): `/daiban` pane reading a Markdown log set by NOTCH_TODO_LOG; writes todo.json
+- [publish-pulse](mods/publish-pulse): status line with days since last publish; reads NOTCH_PUBLISH_ROOT; writes pulse.json
+
+## Source
+- [main.swift](Sources/NotchDesk/main.swift): borderless NSPanel above the menu bar, hover tracking, notch geometry
+- [NotchView.swift](Sources/NotchDesk/NotchView.swift): SwiftUI panel, glass background, motion
+- [Feed.swift](Sources/NotchDesk/Feed.swift): reads ~/.claude/notch/
