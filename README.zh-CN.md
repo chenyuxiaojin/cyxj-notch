@@ -180,6 +180,8 @@ NOTCH_FEED=<放样例 JSON 的文件夹> NOTCH_OPEN=1 ./build/刘海台.app/Cont
 
 ## 关于
 
+设计和迭代过程写在博客：[给 MacBook 刘海装了个 Claude Code 面板](https://blog.xiaochens.com/blog/claude-code-notch-dashboard/)。
+
 作者 [@cyxj_ai](https://www.youtube.com/@cyxj_ai)（陈与小金），非程序员，用 Claude Code 做工具。其他项目：[cyxj-groksearch](https://github.com/chenyuxiaojin/cyxj-groksearch) · [cyxj-hyperframes](https://github.com/chenyuxiaojin/cyxj-hyperframes) · [cyxj-remotion-starter](https://github.com/chenyuxiaojin/cyxj-remotion-starter)
 
 ## 许可

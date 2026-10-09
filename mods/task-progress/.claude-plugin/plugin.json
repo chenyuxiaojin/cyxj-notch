@@ -1,1 +1,1 @@
-{"name": "task-progress", "version": "0.1.0", "description": "输入框上方的任务进度条：Claude 每做完一步，进度条往前走一格", "author": {"name": "chenyuxiaojin"}, "types": "./types/index.d.ts"}
+{"name": "task-progress", "version": "0.1.0", "description": "Registers a progress tool so Claude reports multi-step work, and draws a progress bar above the input box; writes per-session progress to ~/.claude/notch/sessions/.", "author": {"name": "chenyuxiaojin"}, "types": "./types/index.d.ts"}

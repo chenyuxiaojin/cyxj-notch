@@ -1,1 +1,1 @@
-{"name": "quota-status", "version": "0.1.0", "description": "状态栏常驻额度：5 小时 / 本周用了多少、周几重置、本对话折合金额；过 90% 弹窗提醒", "author": {"name": "chenyuxiaojin"}}
+{"name": "quota-status", "version": "0.1.0", "description": "Status line with 5-hour and weekly usage, reset day, session cost and prompt-cache countdown; toasts at 90% usage and 5 minutes before the cache goes cold; writes per-session JSON to ~/.claude/notch/sessions/.", "author": {"name": "chenyuxiaojin"}}

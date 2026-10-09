@@ -1,1 +1,1 @@
-{"name": "version-board", "version": "0.1.0", "description": "/banben 侧边面板：开着的 Studio 版本、档位、跑完没；跑完弹提示；一次超过 3 个版本 Studio 就拦下", "author": {"name": "chenyuxiaojin"}, "types": "./types/index.d.ts"}
+{"name": "version-board", "version": "0.1.0", "description": "/banben side pane of preview servers started by headless claude -p runs (port, effort level, done or running), using local lsof/ps; blocks opening more than 3 at once; writes ~/.claude/notch/versions.json.", "author": {"name": "chenyuxiaojin"}, "types": "./types/index.d.ts"}

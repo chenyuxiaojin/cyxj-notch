@@ -188,6 +188,8 @@ Yes. Each section hides itself when its file is missing or stale.
 
 ## About
 
+Write-up (in Chinese) on how it was designed and iterated: [给 MacBook 刘海装了个 Claude Code 面板](https://blog.xiaochens.com/blog/claude-code-notch-dashboard/).
+
 Made by [@cyxj_ai](https://www.youtube.com/@cyxj_ai), a non-programmer building tools with Claude Code. More projects: [cyxj-groksearch](https://github.com/chenyuxiaojin/cyxj-groksearch) · [cyxj-hyperframes](https://github.com/chenyuxiaojin/cyxj-hyperframes) · [cyxj-remotion-starter](https://github.com/chenyuxiaojin/cyxj-remotion-starter)
 
 ## License
