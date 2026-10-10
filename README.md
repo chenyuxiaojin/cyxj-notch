@@ -113,7 +113,7 @@ claude plugin validate .   # checks the manifest and lists the events and API ca
 claude plugin test .       # runs every *.test.ts / *.test.tsx; quota-status: 9 passed, 0 failed
 ```
 
-All five mods pass both commands on Claude Code 2.1.295 (44 tests in total: quota-status 9, task-progress 11, version-board 13, todo-pane 2, publish-pulse 9).
+All five mods pass both commands on Claude Code 2.1.296 (52 tests in total: quota-status 9, task-progress 19, version-board 13, todo-pane 2, publish-pulse 9).
 
 Lessons from building these:
 - **Keep the mod tiny and the file format boring.** One JSON object per file, with an `at` timestamp; the app treats a session as closed after 150 s without an update, so crashes clean themselves up.

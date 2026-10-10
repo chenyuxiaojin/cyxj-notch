@@ -113,7 +113,7 @@ claude plugin validate .   # 检查插件清单，列出 mod 用了哪些事件�
 claude plugin test .       # 跑所有 *.test.ts / *.test.tsx；quota-status：9 过 0 挂
 ```
 
-5 个 mod 在 Claude Code 2.1.295 上两条命令全部通过，共 44 个测试（quota-status 9、task-progress 11、version-board 13、todo-pane 2、publish-pulse 9）。
+5 个 mod 在 Claude Code 2.1.296 上两条命令全部通过，共 52 个测试（quota-status 9、task-progress 19、version-board 13、todo-pane 2、publish-pulse 9）。
 
 做这几个 mod 的经验：
 - **mod 越小越好，文件格式越无聊越好。** 一个文件一个 JSON，带 `at` 时间戳；刘海台 150 秒没收到更新就当对话关了，崩溃了也能自己清掉。

@@ -87,18 +87,23 @@ export const register: Register = on => {
       return next(e)
     }
 
+    // 保留 Claude Code 和其他插件在输入框上方渲染的内容。
+    const content = await next(e)
     const { Box, Text } = $.ui.resolve(e)
     const { filled, empty } = barParts(p)
     const isDone = p.done >= p.total
 
     return (
-      <Box>
-        <Text color="claude">{filled}</Text>
-        <Text dimColor>{empty}</Text>
-        <Text>{`  ${p.done}/${p.total}  `}</Text>
-        <Text dimColor wrap="truncate-end">
-          {isDone ? '✓ 完成' : `正在：${p.now}`}
-        </Text>
+      <Box flexDirection="column">
+        {content}
+        <Box>
+          <Text color="claude">{filled}</Text>
+          <Text dimColor>{empty}</Text>
+          <Text>{`  ${p.done}/${p.total}  `}</Text>
+          <Text dimColor wrap="truncate-end">
+            {isDone ? '✓ 完成' : `正在：${p.now}`}
+          </Text>
+        </Box>
       </Box>
     )
   })

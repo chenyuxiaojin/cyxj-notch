@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Preserve other `AbovePrompt` content alongside the task-progress bar. Add terminal and desktop regression coverage for active, completed, empty, and survey states, including clearing completed progress on the next prompt (all five mods validate; 52 tests pass on Claude Code 2.1.296).
 - Click a session card to jump to its Terminal.app tab (window comes to the front). macOS asks once for permission to control Terminal.
 - quota-status mod now writes the session's `tty` and `app` (`TERM_PROGRAM`) into `sessions/<id>.quota.json`.
 

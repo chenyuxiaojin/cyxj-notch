@@ -54,7 +54,12 @@ const PROPS = {
 
 describe('输入框上方的进度条', () => {
   for (const surface of ['terminal', 'desktop'] as const) {
-    test(`${surface}：Claude 报了 3/7 就画出进度条`, async $ => {
+    test(`${surface}：Claude 报了 3/7 就画出进度条`, async ($, on) => {
+      on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
+        const { Box } = $.ui.resolve(e)
+
+        return <Box />
+      })
       await $.tool.call({ tool: 'mcp__task-progress__progress', done: 3, total: 7, now: '渲染第二段' })
 
       const ui = await $.ui.mount({ plugin: 'task-progress', surface, component: 'AbovePrompt', props: PROPS })
@@ -93,5 +98,74 @@ describe('输入框上方的进度条', () => {
 
       expect(await ui.findAll({ type: 'Text' })).toHaveLength(0)
     })
+  }
+})
+
+describe('保留其他 AbovePrompt 内容', () => {
+  const cases = [
+    { name: '任务进行中', done: 3, hasSurvey: false, showProgress: true },
+    { name: '任务已完成', done: 7, hasSurvey: false, showProgress: true },
+    { name: '没有任务', done: null, hasSurvey: false, showProgress: false },
+    { name: '问卷显示中', done: 3, hasSurvey: true, showProgress: false },
+  ] as const
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    for (const scenario of cases) {
+      test(`${surface}：${scenario.name}时保留下游文字和按钮`, async ($, on) => {
+        let downstreamCalls = 0
+        on('ui.render', { component: 'AbovePrompt' }, async ($, e) => {
+          downstreamCalls += 1
+          const { Box, Text, Button } = $.ui.resolve(e)
+
+          return (
+            <Box>
+              <Text>downstream-marker</Text>
+              <Button label="downstream-control" onPress={() => {}} />
+            </Box>
+          )
+        })
+        on('prompt.submit', ($, e) => ({ text: e.text }))
+
+        if (scenario.done !== null) {
+          await $.tool.call({
+            tool: 'mcp__task-progress__progress',
+            done: scenario.done,
+            total: 7,
+            now: '渲染第二段',
+          })
+        }
+
+        const ui = await $.ui.mount({
+          plugin: 'task-progress',
+          surface,
+          component: 'AbovePrompt',
+          props: { ...PROPS, hasSurvey: scenario.hasSurvey },
+        })
+        const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text)
+        const expectedTexts = ['downstream-marker']
+
+        if (scenario.showProgress) {
+          const { filled, empty } = barParts({ done: scenario.done, total: 7, now: '渲染第二段' })
+          expectedTexts.push(
+            filled,
+            empty,
+            `  ${scenario.done}/7  `,
+            scenario.done === 7 ? '✓ 完成' : '正在：渲染第二段',
+          )
+        }
+
+        expect(texts).toEqual(expectedTexts)
+        expect(await ui.find({ type: 'Button', label: 'downstream-control' })).toBeDefined()
+        expect(downstreamCalls).toBe(1)
+
+        if (scenario.done === 7) {
+          await $.prompt.submit({ text: '下一件事', wait: false, origin: { kind: 'composer' } })
+          const after = await $.ui.mount({ plugin: 'task-progress', surface, component: 'AbovePrompt', props: PROPS })
+
+          expect((await after.findAll({ type: 'Text' })).map(t => t.text)).toEqual(['downstream-marker'])
+          expect(await after.find({ type: 'Button', label: 'downstream-control' })).toBeDefined()
+        }
+      })
+    }
   }
 })
