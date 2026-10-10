@@ -16,6 +16,20 @@ let lastAt: number | undefined
 let isWorking = false
 let cacheWarnedFor: number | undefined
 
+// 这个对话所在的终端标签页（如 /dev/ttys001），刘海台点对话时靠它跳回来；第一次刷新时查一次
+let terminal: { tty: string; app: string | null } | undefined
+let terminalLooked = false
+
+// 从 $.process.run 起的命令往上找祖先进程，第一个挂在终端上的就是 Claude Code 所在的标签页
+const TTY_SCRIPT = 'p=$PPID; while [ "$p" -gt 1 ]; do t=$(ps -o tty= -p $p | tr -d " "); case $t in ""|"?"*) p=$(ps -o ppid= -p $p | tr -d " ");; *) echo $t; exit;; esac; done'
+
+const findTerminal = async ($: EngineInterface) => {
+  const { stdout } = await $.process.run(['sh', '-c', TTY_SCRIPT])
+  const tty = stdout.trim()
+  if (!tty || tty.startsWith('?')) return undefined
+  return { tty: `/dev/${tty}`, app: (await $.env.get('TERM_PROGRAM')) ?? null }
+}
+
 const warnCache = ($: EngineInterface) => {
   const text = `缓存 ${WARN_LEFT_MIN} 分钟内变凉，要走开的话先 /compact`
   $.ui.toast(text, { timeoutMs: 15_000 })
@@ -34,9 +48,14 @@ const refresh = async ($: EngineInterface) => {
 
   $.ui.status(cache ? `${quota} · ${cache}` : quota)
 
+  if (!terminalLooked) {
+    terminalLooked = true
+    terminal = await findTerminal($).catch(() => undefined)
+  }
+
   const id = await $.session.id()
   const cwd = await $.session.cwd()
-  const feed = { id, cwd, at: now, working: isWorking, quota, cache: cache ?? null, limits: usage.rateLimits }
+  const feed = { id, cwd, at: now, working: isWorking, quota, cache: cache ?? null, limits: usage.rateLimits, ...terminal }
   void $.fs.write(`${await feedDir($)}/${id}.quota.json`, JSON.stringify(feed)).catch(() => undefined)
 
   for (const limit of newlyOver(usage.rateLimits, warned)) {

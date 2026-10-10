@@ -363,6 +363,7 @@ struct StatCard: View {
 struct SessionCard: View {
     let row: SessionRow
     let justFinished: Bool
+    @State private var hovering = false
 
     private var status: (String, Color) {
         if justFinished { return ("刚跑完", Palette.done) }
@@ -410,7 +411,10 @@ struct SessionCard: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(Palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(hovering ? Color.white.opacity(0.13) : Palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 && row.tty != nil }
+        .onTapGesture { if let tty = row.tty { Terminal.focus(tty) } }
     }
 
     /// 第二行：有进度看进度；停下了看缓存还热多久（干活时缓存一直是满的，不显示）
@@ -422,6 +426,34 @@ struct SessionCard: View {
             return plainCache(cache)
         }
         return nil
+    }
+}
+
+/// 让系统「终端」切到某个标签页并提到最前（第一次会弹窗问能不能控制终端）
+enum Terminal {
+    private static let script = """
+    on run argv
+        set target to item 1 of argv
+        tell application "Terminal"
+            repeat with w in windows
+                repeat with t in tabs of w
+                    if tty of t is target then
+                        set selected of t to true
+                        set index of w to 1
+                        activate
+                        return
+                    end if
+                end repeat
+            end repeat
+        end tell
+    end run
+    """
+
+    static func focus(_ tty: String) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        task.arguments = ["-e", script, tty]
+        try? task.run()
     }
 }
 

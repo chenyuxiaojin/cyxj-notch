@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Click a session card to jump to its Terminal.app tab (window comes to the front). macOS asks once for permission to control Terminal.
+- quota-status mod now writes the session's `tty` and `app` (`TERM_PROGRAM`) into `sessions/<id>.quota.json`.
+
 ## 0.1.0 — 2026-10-09
 
 First public release.

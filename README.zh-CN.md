@@ -25,7 +25,7 @@
 |---|---|---|
 | 额度 | 5 小时 / 本周用了多少、什么时候重置 | `quota-status` |
 | 缓存最快凉 | 停着的对话里缓存剩得最少的那个，只在有对话停着时出现 | `quota-status` |
-| 对话 | 每个开着的 Claude Code：运行中 / 空闲 / 刚跑完，第几步和进度条 | `quota-status` + `task-progress` |
+| 对话 | 每个开着的 Claude Code：运行中 / 空闲 / 刚跑完，第几步和进度条；点一下跳到它所在的「终端」标签页 | `quota-status` + `task-progress` |
 | 版本预览 | `claude -p` 跑出来的预览服务，点端口直接打开 | `version-board` |
 | 正在推进的内容 | Markdown 待办里的条目，「等你」排最前，其次「AI 接手」，「等某个时间」最后 | `todo-pane` |
 | 发片节奏 | 距上次发片几天、下一次定时发布 | `publish-pulse` |
@@ -127,7 +127,7 @@ claude plugin test .       # 跑所有 *.test.ts / *.test.tsx；quota-status：9
 
 | 文件 | 结构 |
 |---|---|
-| `sessions/<id>.quota.json` | `{ id, cwd, at, working, cache, limits: [{ kind: "five_hour" \| "seven_day", percentUsed, resetsAt }] }` |
+| `sessions/<id>.quota.json` | `{ id, cwd, at, working, cache, limits: [{ kind: "five_hour" \| "seven_day", percentUsed, resetsAt }], tty?, app? }` |
 | `sessions/<id>.progress.json` | `{ id, at, progress: { done, total, now } \| null }` |
 | `versions.json` | `{ at, rows: [{ label, port, effort, state, isRunning, isVersion }] }` |
 | `todo.json` | `{ at, busy: [{ title, next }], wrapUp: [{ title, next }] }` |

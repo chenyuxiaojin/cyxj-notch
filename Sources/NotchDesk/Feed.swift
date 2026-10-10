@@ -16,6 +16,9 @@ struct QuotaFeed: Decodable {
     let working: Bool?
     let cache: String?
     let limits: [Limit]?
+    /// 对话所在的终端标签页（/dev/ttys001）和终端 App（TERM_PROGRAM）
+    let tty: String?
+    let app: String?
 }
 
 struct Progress: Decodable, Equatable {
@@ -67,6 +70,8 @@ struct SessionRow: Identifiable, Equatable {
     let working: Bool
     let cache: String?
     let progress: Progress?
+    /// 跑在系统「终端」里才有：点对话靠它跳回对应标签页
+    let tty: String?
 }
 
 struct Snapshot {
@@ -117,7 +122,8 @@ enum Feed {
                     project: (q.cwd as NSString?)?.lastPathComponent ?? "?",
                     working: q.working ?? false,
                     cache: q.cache,
-                    progress: progress[q.id]
+                    progress: progress[q.id],
+                    tty: q.app == "Apple_Terminal" ? q.tty : nil
                 )
             }
             .sorted { $0.project < $1.project }

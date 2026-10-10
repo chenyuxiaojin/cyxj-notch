@@ -25,7 +25,7 @@ When the mouse is away, the panel is exactly the size of the hardware notch, so 
 |---|---|---|
 | Usage | 5-hour and weekly limit used (%), when each resets | `quota-status` mod |
 | Cache | The idle session whose prompt cache expires soonest ("12 min left") | `quota-status` mod |
-| Sessions | Every open Claude Code session: running / idle / just finished, step `3/5` with a progress bar | `quota-status` + `task-progress` mods |
+| Sessions | Every open Claude Code session: running / idle / just finished, step `3/5` with a progress bar; click a session to jump to its Terminal.app tab | `quota-status` + `task-progress` mods |
 | Versions | Preview servers started by headless `claude -p` runs, click to open | `version-board` mod |
 | To-dos | Items from a Markdown log, "waiting on you" first, then "AI can continue", then "waiting until a time" | `todo-pane` mod |
 | Publish cadence | Days since the last release and the next scheduled one | `publish-pulse` mod |
@@ -127,7 +127,7 @@ Everything lives in `~/.claude/notch/`:
 
 | File | Shape |
 |---|---|
-| `sessions/<id>.quota.json` | `{ id, cwd, at, working, cache, limits: [{ kind: "five_hour" \| "seven_day", percentUsed, resetsAt }] }` |
+| `sessions/<id>.quota.json` | `{ id, cwd, at, working, cache, limits: [{ kind: "five_hour" \| "seven_day", percentUsed, resetsAt }], tty?, app? }` |
 | `sessions/<id>.progress.json` | `{ id, at, progress: { done, total, now } \| null }` |
 | `versions.json` | `{ at, rows: [{ label, port, effort, state, isRunning, isVersion }] }` |
 | `todo.json` | `{ at, busy: [{ title, next }], wrapUp: [{ title, next }] }` |
