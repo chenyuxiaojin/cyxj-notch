@@ -16,6 +16,10 @@ let lastAt: number | undefined
 let isWorking = false
 let cacheWarnedFor: number | undefined
 
+// 主对话最近一次调模型用的模型和档位：档位只有 turn.step 带，没发过话之前模型先用 /model 显示的
+let model: string | undefined
+let effort: string | number | undefined
+
 // 这个对话所在的终端标签页（如 /dev/ttys001），刘海台点对话时靠它跳回来；第一次刷新时查一次
 let terminal: { tty: string; app: string | null } | undefined
 let terminalLooked = false
@@ -55,7 +59,20 @@ const refresh = async ($: EngineInterface) => {
 
   const id = await $.session.id()
   const cwd = await $.session.cwd()
-  const feed = { id, cwd, at: now, working: isWorking, quota, cache: cache ?? null, limits: usage.rateLimits, ...terminal }
+  const shownModel = model ?? (await $.session.model().catch(() => undefined))
+  const feed = {
+    id,
+    cwd,
+    at: now,
+    working: isWorking,
+    quota,
+    cache: cache ?? null,
+    ttl,
+    model: shownModel ?? null,
+    effort: effort ?? null,
+    limits: usage.rateLimits,
+    ...terminal,
+  }
   void $.fs.write(`${await feedDir($)}/${id}.quota.json`, JSON.stringify(feed)).catch(() => undefined)
 
   for (const limit of newlyOver(usage.rateLimits, warned)) {
@@ -88,6 +105,17 @@ export const register: Register = on => {
     void refresh($).catch(() => undefined)
 
     return next(e)
+  })
+
+  // 记下主对话这一步用的模型和档位；中途 /model、/effort 换了就马上推给刘海台
+  on('turn.step', async function* ($, e, next) {
+    if (e.agentId === undefined && (e.model !== model || e.effort !== effort)) {
+      model = e.model
+      effort = e.effort
+      void refresh($).catch(() => undefined)
+    }
+
+    return yield* next(e)
   })
 
   // 只看主对话：子任务的回合不算

@@ -127,7 +127,7 @@ claude plugin test .       # 跑所有 *.test.ts / *.test.tsx；quota-status：9
 
 | 文件 | 结构 |
 |---|---|
-| `sessions/<id>.quota.json` | `{ id, cwd, at, working, cache, limits: [{ kind: "five_hour" \| "seven_day", percentUsed, resetsAt }], tty?, app? }` |
+| `sessions/<id>.quota.json` | `{ id, cwd, at, working, cache, ttl, model, effort, limits: [{ kind: "five_hour" \| "seven_day", percentUsed, resetsAt }], tty?, app? }` |
 | `sessions/<id>.progress.json` | `{ id, at, progress: { done, total, now } \| null }` |
 | `versions.json` | `{ at, rows: [{ label, port, effort, state, isRunning, isVersion }] }` |
 | `todo.json` | `{ at, busy: [{ title, next }], wrapUp: [{ title, next }] }` |

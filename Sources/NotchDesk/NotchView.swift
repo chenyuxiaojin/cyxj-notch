@@ -387,7 +387,10 @@ struct SessionCard: View {
                 }
                 .frame(width: 12)
 
-                Text(row.project).font(.system(size: 13, weight: .medium)).lineLimit(1)
+                Text(row.project).font(.system(size: 13, weight: .medium)).lineLimit(1).layoutPriority(1)
+                if let gear = row.gear {
+                    Text(gear).font(.system(size: 11)).foregroundStyle(Palette.label).lineLimit(1)
+                }
                 Spacer(minLength: 8)
                 Text(label)
                     .font(.system(size: 10.5, weight: .semibold))
@@ -407,6 +410,8 @@ struct SessionCard: View {
 
             if let p = row.progress, p.total > 0, p.done < p.total {
                 ProgressLine(done: p.done, total: p.total).padding(.leading, 20)
+            } else if let minutes = hotCache {
+                CacheLine(minutes: minutes, ttl: row.cacheTTL).padding(.leading, 20)
             }
         }
         .padding(.horizontal, 12)
@@ -417,12 +422,23 @@ struct SessionCard: View {
         .onTapGesture { if let tty = row.tty { Terminal.focus(tty) } }
     }
 
-    /// 第二行：有进度看进度；停下了看缓存还热多久（干活时缓存一直是满的，不显示）
+    private var inProgress: Bool {
+        guard let p = row.progress else { return false }
+        return p.done < p.total
+    }
+
+    /// 停下了、缓存还热：剩几分钟（画成进度条）
+    private var hotCache: Int? {
+        guard !row.working, !inProgress else { return nil }
+        return row.cache.flatMap(cacheMinutes)
+    }
+
+    /// 第二行文字：有进度看进度；缓存已凉写一句（还热的走进度条，干活时缓存一直是满的，不显示）
     private var detail: String? {
-        if let p = row.progress, p.done < p.total {
+        if let p = row.progress, inProgress {
             return "第 \(p.done + 1)/\(p.total) 步 · \(p.now)"
         }
-        if !row.working, let cache = row.cache {
+        if !row.working, hotCache == nil, let cache = row.cache {
             return plainCache(cache)
         }
         return nil
@@ -469,6 +485,31 @@ struct ProgressLine: View {
             }
         }
         .frame(height: 3)
+    }
+}
+
+/// 缓存还剩多少：条越短越快凉，颜色跟「缓存最快凉」卡片一致
+struct CacheLine: View {
+    let minutes: Int
+    let ttl: Int
+
+    var body: some View {
+        let color = cacheColor(minutes)
+
+        HStack(spacing: 8) {
+            Text("缓存").font(.system(size: 11.5)).foregroundStyle(Palette.dim)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.1))
+                    Capsule().fill(color.opacity(0.85))
+                        .frame(width: geo.size.width * min(1, CGFloat(minutes) / CGFloat(max(ttl, 1))))
+                }
+            }
+            .frame(height: 4)
+            Text("\(minutes) 分钟")
+                .font(.system(size: 11.5).monospacedDigit())
+                .foregroundStyle(color == .white ? Palette.dim : color)
+        }
     }
 }
 

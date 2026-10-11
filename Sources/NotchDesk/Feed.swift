@@ -15,10 +15,32 @@ struct QuotaFeed: Decodable {
     let at: Double?
     let working: Bool?
     let cache: String?
+    /// 缓存总共能热多久（分钟）：订阅 60，按量 5
+    let ttl: Int?
+    let model: String?
+    let effort: Effort?
     let limits: [Limit]?
     /// 对话所在的终端标签页（/dev/ttys001）和终端 App（TERM_PROGRAM）
     let tty: String?
     let app: String?
+}
+
+/// 档位：一般是 low/medium/high/xhigh/max，也可能直接是个数字
+enum Effort: Decodable {
+    case level(String)
+    case number(Int)
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let n = try? c.decode(Int.self) { self = .number(n) } else { self = .level(try c.decode(String.self)) }
+    }
+
+    var label: String {
+        switch self {
+        case .number(let n): return "\(n)"
+        case .level(let s): return s
+        }
+    }
 }
 
 struct Progress: Decodable, Equatable {
@@ -69,6 +91,9 @@ struct SessionRow: Identifiable, Equatable {
     let project: String
     let working: Bool
     let cache: String?
+    let cacheTTL: Int
+    /// 模型和档位，如「Opus 5.5 · 高」
+    let gear: String?
     let progress: Progress?
     /// 跑在系统「终端」里才有：点对话靠它跳回对应标签页
     let tty: String?
@@ -122,6 +147,8 @@ enum Feed {
                     project: (q.cwd as NSString?)?.lastPathComponent ?? "?",
                     working: q.working ?? false,
                     cache: q.cache,
+                    cacheTTL: q.ttl ?? 60,
+                    gear: gearLabel(q.model, q.effort),
                     progress: progress[q.id],
                     tty: q.app == "Apple_Terminal" ? q.tty : nil
                 )
@@ -136,6 +163,26 @@ enum Feed {
         }
 
         return snap
+    }
+
+    /// 「claude-opus-5-5[1m]」+ high →「Opus 5.5 1M · high」
+    static func gearLabel(_ model: String?, _ effort: Effort?) -> String? {
+        let parts = [model.map(modelName), effort?.label].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    static func modelName(_ id: String) -> String {
+        var s = id.lowercased()
+        let long = s.contains("[1m]")
+        if let i = s.firstIndex(of: "[") { s = String(s[..<i]) }
+        if s.hasPrefix("claude-") { s = String(s.dropFirst(7)) }
+        // 去掉末尾日期（-20250929）
+        let words = s.split(separator: "-").map(String.init).filter { !($0.count == 8 && $0.allSatisfy(\.isNumber)) }
+        guard let name = words.first else { return id }
+        let version = words.dropFirst().filter { $0.allSatisfy(\.isNumber) }.joined(separator: ".")
+        return [name.prefix(1).uppercased() + name.dropFirst(), version, long ? "1M" : ""]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
     }
 
     private static func read<T: Decodable>(_ url: URL) -> T? {
